@@ -1,15 +1,14 @@
-Download mmetection model from here:
+1. Clone forked repo:  git clone --recursive https://github.com/RussWolfinger/automatic-positions-detection-and-scoring-in-jiu-jitsu    
+Some files are hacked to avoid calling Valter's tracker model which he did not include and which we don't really need anyway.
 
+2. Download mmetection model from here:  https://download.openmmlab.com/mmdetection/v3.0/deformable_detr/deformable-detr-refine-twostage_r50_16xb2-50e_coco/deformable-detr-refine-twostage_r50_16xb2-50e_coco_20221021_184714-acc8a5ff.pth
 Save it in ./checkpoints/detection/   and name it deformable_detr_twostage_refine.pth
 
-Download ViTPose model from here:
-
+3. Download ViTPose model from here:
 Save it in ./checkpoints/ and name it vitpose-h.pth
 
-Use pip to install all required python packages as described in the repo.
+4. Use pip to install all required python packages as described in the repo description.
 
-Update your local git using the pushes I made--hacks to avoid calling Valter's tracker model which he did not include and which we don't really need anyway.
+5. Note example video in ./inputs/craig_jones_triangle_escape.mp4
 
-Note new video in ./inputs/craig_jones_triangle_escape.mp4
-
-From the root directory, run   python ../../scripts/run_tracker.py
+6. From the root directory of the repo, run   python ../../scripts/run_tracker.py

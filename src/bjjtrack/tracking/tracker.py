@@ -177,8 +177,9 @@ class Tracker():
         self.logger = logging.getLogger("tracking")
 
         # Load tracking model
-        with open(self.tracker_path, 'rb') as f:
-            self.tracker =  pickle.load(f)
+        # need tracker_v3.pickle from Valter
+        # with open(self.tracker_path, 'rb') as f:
+        #     self.tracker =  pickle.load(f)
 
         self.unmatched_id = unmatched_id
 
@@ -518,7 +519,7 @@ class Tracker():
                 pose_result['track_id'] = id
                 matched[id] = i
         
-        #update anchors and visual datasets
+        # update anchors and visual datasets
         updated = self.update(matched, ordered_results, frame, init=True)
         return matched, ordered_results, updated
      
@@ -601,9 +602,15 @@ class Tracker():
         self.compute_ioas(ordered_results)
 
         tracking_predictions = dict()
-        tracking_predictions[0] = self.tracker.predict_proba(features0)
-        tracking_predictions[1] = self.tracker.predict_proba(features1)
-
+        
+        # only place classifier is called?
+        # tracking_predictions[0] = self.tracker.predict_proba(features0)
+        # tracking_predictions[1] = self.tracker.predict_proba(features1)
+        
+        # dummy values for now
+        tracking_predictions[0] = np.ones((2,2)) * 0.5
+        tracking_predictions[1] = np.ones((2,2)) * 0.5
+         
         tracking_predictions = np.stack((tracking_predictions[0][:, 1],tracking_predictions[1][:, 1]))
 
         matched = dict()

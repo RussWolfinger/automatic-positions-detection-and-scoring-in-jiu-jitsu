@@ -14,6 +14,37 @@ from mmpose.datasets import DatasetInfo
 from mmdet.apis import inference_detector, init_detector
 
 
+
+from pytube import YouTube
+
+# Replace with the URL of the YouTube video you want to download
+video_url = "https://www.youtube.com/watch?v=your_video_id"
+
+try:
+    yt = YouTube(video_url)
+
+    # You can filter streams based on resolution, file type, etc.
+    # For example, to get the highest resolution progressive MP4 stream:
+    stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+
+    if stream:
+        print(f"Downloading: {yt.title} ({stream.resolution})")
+        stream.download(output_path="downloads") # Downloads to a folder named "downloads"
+        print("Download complete!")
+    else:
+        print("No suitable stream found for download.")
+
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+import sys
+sys.path.append(os.path.join(sys.path[0], "../"))
+print(sys.path)
+
+# from huggingface_hub import hf_hub_download
+# local_file_path = hf_hub_download(repo_id="SenseTime/deformable-detr-with-box-refine-two-stage", filename="pytorch_model.bin")
+# print(f"File downloaded to: {local_file_path}")
+
 from bjjtrack.tracking import Tracker, JOINTS, add_featuremaps
 from bjjtrack.utils import get_bbox_from_pose, prepare_output_dirs, vis_pose_tracking_result
 
@@ -31,14 +62,24 @@ VIS_CONF_TRESH = 7
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--tracker-path', type=str, default='checkpoints/tracker/tracker_v3.pickle')
+    # https://github.com/open-mmlab/mmdetection/tree/e9cae2d0787cd5c2fc6165a6061f92fa09e48fb1
     parser.add_argument('--det-config', help='Config file for detection', default='mmdetection/configs/deformable_detr/deformable_detr_twostage_refine_r50_16x2_50e_coco.py')
     parser.add_argument('--det-checkpoint', help='Checkpoint file for detection', default='checkpoints/detection/deformable_detr_twostage_refine.pth')
+    # parser.add_argument('--det-checkpoint', help='Checkpoint file for detection', default='checkpoints/detection/pytorch_model.bin')
+    # https://github.com/ViTAE-Transformer/ViTPose/tree/d5216452796c90c6bc29f5c5ec0bdba94366768a?tab=readme-ov-file
     parser.add_argument('--pose-config', help='Config file for pose', default='ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py')
-    parser.add_argument('--pose-checkpoint', help='Checkpoint file for pose', default='checkpoints/vitpose-h-multi-coco.pth')
+    # parser.add_argument('--pose-checkpoint', help='Checkpoint file for pose', default='checkpoints/vitpose-h-multi-coco.pth')
+    parser.add_argument('--pose-checkpoint', help='Checkpoint file for pose', default='checkpoints/vitpose-h.pth')
+    
+    parser.add_argument('--video-path', type=str, default='inputs/craig_jones_triangle_escape.mp4', help='Video path')
+    
     parser.add_argument('--init-frames-count', type=int, default=150, help='Number of frames to initialize the tracker using only pose distances. (5s by default)')
     
-    parser.add_argument('--video-path', type=str, help='Video path')
-    parser.add_argument('--skip-frames-count', type=int, default = 0)
+    # parser.add_argument('--skip-frames-count', type=int, default=0)
+    # skip a bunch of frames for now for speed
+    parser.add_argument('--skip-frames-count', type=int, default=600)
+    
+    
     parser.add_argument('--out-root', default='outputs/demo', help='Root of the output files.')
     parser.add_argument('--device', default='cuda:0', help='Device used for inference')
     parser.add_argument('--device-det', default='cuda:0', help='Device used for detection')
@@ -93,12 +134,15 @@ def main():
     size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
             int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # out_video = os.path.join(args.out_root, f'vis_{os.path.basename(args.video_path)}')
+    out_video = f"{pose_dir}/vis_{os.path.basename(args.video_path)}.mp4"
+    print(out_video)
     videoWriter = cv2.VideoWriter(
-        os.path.join(args.out_root,
-                        f'vis_{os.path.basename(args.video_path)}'), fourcc,
+        out_video, fourcc,
         fps, size)
 
     frame = 0
+    
     tracker = Tracker(tracker_path, 2, size, 
                       POSE_WINDOW_LEN, DIST_TRESH, 
                       JOINTS, NJOINTS, JOINT_CONF_TRESH, 
@@ -122,7 +166,7 @@ def main():
         # keep the person class bounding boxes.
         person_results = process_mmdet_results(mmdet_results, 1)
 
-        #improve detections by adding the extended bounding boxes of previous poses
+        # improve detections by adding the extended bounding boxes of previous poses
         if pose1:
             person_results.append(get_bbox_from_pose(pose1['keypoints']))
         if pose2:
@@ -146,10 +190,14 @@ def main():
             
         if len(pose_results):
             pose_results = add_featuremaps(pose_model, img, pose_results, args.device)
+            
+            # print(pose_results)
+            
             if init_frames_count > frame - args.skip_frames_count:
                 matched, pose_results, updated = tracker.init_tracking(pose_results, frame)
             else:
                 matched, pose_results, updated = tracker.track(pose_results, frame)
+                
             NO_MATCH = False
             if 0 in matched:
                 id1 = matched[0]
@@ -206,6 +254,7 @@ def main():
 
     cap.release()
     videoWriter.release()
+    # cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':

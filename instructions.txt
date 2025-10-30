@@ -4,7 +4,7 @@ Some files are hacked to avoid calling Valter's tracker model which he did not i
 2. Download mmetection model from here:  https://download.openmmlab.com/mmdetection/v3.0/deformable_detr/deformable-detr-refine-twostage_r50_16xb2-50e_coco/deformable-detr-refine-twostage_r50_16xb2-50e_coco_20221021_184714-acc8a5ff.pth
 Save it in ./checkpoints/detection/   and name it deformable_detr_twostage_refine.pth
 
-3. Download ViTPose model from here:
+3. Download ViTPose model from here: https://1drv.ms/u/s!AimBgYV7JjTlgccmHofkmfJDQDukVw?e=gRK224
 Save it in ./checkpoints/ and name it vitpose-h.pth
 
 4. Use pip to install all required python packages as described in the repo description.
